@@ -5,11 +5,20 @@ iron = require("iron")
 
 password = process.argv[2]
 
+present = {}
+
 config = {}
 try
   config = require("#{process.env.HOME}/.nackchannelrc.json")
 
 nick = config.nick || process.env.USER
+nick += "{reset}"
+
+colors = [ "blue","cyan","green","magenta","red","white","yellow" ]
+randomColor = colors[Math.floor(Math.random()*colors.length)]
+color = randomColor
+if(typeof config.color != 'undefined')
+  color = config.color
 
 server = dgram.createSocket("udp4")
 client = dgram.createSocket("udp4")
@@ -53,25 +62,35 @@ callout = (msg) ->
   )
 
 msgLine = 0
-printNewMessage = (nick, msg) ->
+printNewMessage = (obj) ->
+  # if msgLine > process.stdout.getWindowSize()[1]-4
+  #   msgLine = 0
+  #   charm.erase 'screen'
 
-  msg = callout(msg)
+  msg = callout(obj.payload)
 
-  updateMessageList(msg)
+  updateMessageList(obj)
 
   displayMessageList
 
-  # charm.position 0, ++msgLine
-  # charm.write '\u0007'
-  # charm.write stylize("[{green}#{nick}{reset}] #{msg}")
-  # charm.display('reset')
-  # positionForInput()
+  charm.position 0, ++msgLine
+  charm.write '\u0007'
+  if obj.nick == nick
+    charm.write stylize("[{#{obj.color}}{bold}#{obj.nick}{reset}] #{obj.payload}")
+  else
+    charm.write stylize("[{#{obj.color}}#{obj.nick}{reset}] #{obj.payload}")
+  charm.display('reset')
+  positionForInput()
 
 displayMessageList = ->
-  for message in messageList
+  charm.erase 'screen'
+  for obj in messageList
     charm.position 0, ++msgLine
     charm.write '\u0007'
-    charm.write stylize("[{green}#{nick}{reset}] #{msg}")
+    if obj.nick == nick
+      charm.write stylize("[{#{obj.color}}{bold}#{obj.nick}{reset}] #{obj.payload}")
+    else
+      charm.write stylize("[{#{obj.color}}#{obj.nick}{reset}] #{obj.payload}")
     charm.display('reset')
   positionForInput()
 
@@ -82,12 +101,50 @@ positionForInput = ->
   charm.position 0, process.stdout.getWindowSize()[1]-1
   charm.background 'black'
 
+presence = ->
+  line = 0
+  size = process.stdout.getWindowSize()
 
-send = (msg) ->
+  for i in [0..10]
+    charm.position size[0] - 10, line
+    charm.write("         ")
+    line++
+    
+
+  line = 0
+  for n of present
+    if((new Date() - present[n].when) < 5000)
+      line++
+      charm.position size[0] - 10, line
+      charm.write(stylize("{#{present[n].color}}#{n}{reset}"))
+
+  positionForInput()
+  obj =
+    nick: nick
+    presence: true
+    color: color
+  send(obj)
+
+see = (obj) ->
+  present[obj.nick] =
+    when: new Date()
+    color: obj.color
+  
+
+
+sendRaw = (msg) ->
   msg = new Buffer msg
   client.send msg, 0, msg.length, port, '224.0.0.0', (err, bytes) ->
     positionForInput()
     charm.erase 'end'
+
+send = (obj) ->
+  if password
+    iron.seal obj, password, iron.defaults, (err, sealed) ->
+      sendRaw(sealed)
+  else
+    msg = JSON.stringify(obj)
+    sendRaw(msg)
 
 
 positionForInput()
@@ -97,12 +154,21 @@ updateMessageList = (msg) ->
   messageList.push(msg)
   if messageList.length > process.stdout.getWindowSize()[1]-4
     messageList.shift()
+setInterval presence, 5000
 
 stdin = process.openStdin()
 stdin.on 'data', (msg) ->
   obj =
     payload: msg.toString()
     nick: nick
+    color: color
+  send(obj)
+
+parseMsg = (obj) ->
+  if obj.payload?
+    printNewMessage obj
+  else if obj.presence?
+    see(obj)
   if password
     iron.seal obj, password, iron.defaults, (err, sealed) ->
       send(sealed)
@@ -114,10 +180,10 @@ server.on 'message', (str, rinfo) ->
   if password
     iron.unseal str.toString(), password, iron.defaults, (err, obj) ->
       return unless obj?
-      printNewMessage obj.nick, obj.payload
+      parseMsg(obj)
   else
     try
       obj = JSON.parse(str)
-      printNewMessage obj.nick, obj.payload
+      parseMsg(obj)
 
 
