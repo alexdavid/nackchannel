@@ -4,7 +4,8 @@
   "description": "Quick hack I built for chatting over multicast",
   "main": "server.js",
   "dependencies": {
-    "charm": "~0.1.1"
+    "charm": "~0.1.1",
+    "iron": "latest"
   },
   "devDependencies": {},
   "scripts": {

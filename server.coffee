@@ -1,5 +1,9 @@
-dgram = require("dgram")
 charm = require('charm')()
+dgram = require("dgram")
+iron = require("iron")
+
+
+password = process.argv[2]
 
 nick = process.env.USER
 
@@ -56,6 +60,7 @@ printNewMessage = (nick, msg) ->
   charm.write '\u0007'
   charm.write stylize("[{green}#{nick}{reset}] #{msg}")
   charm.display('reset')
+  positionForInput()
 
 
 positionForInput = ->
@@ -66,6 +71,13 @@ positionForInput = ->
   charm.background 'black'
 
 
+send = (msg) ->
+  msg = new Buffer msg
+  client.send msg, 0, msg.length, port, '224.0.0.0', (err, bytes) ->
+    positionForInput()
+    charm.erase 'end'
+
+
 positionForInput()
 
 stdin = process.openStdin()
@@ -73,13 +85,21 @@ stdin.on 'data', (msg) ->
   obj =
     payload: msg.toString()
     nick: nick
-  msg = new Buffer JSON.stringify(obj)
-  client.send msg, 0, msg.length, port, '224.0.0.0', (err, bytes) ->
-    positionForInput()
-    charm.erase 'end'
-
+  if password
+    iron.seal obj, password, iron.defaults, (err, sealed) ->
+      send(sealed)
+  else
+    msg = JSON.stringify(obj)
+    send(msg)
 
 server.on 'message', (str, rinfo) ->
-  obj = JSON.parse(str)
-  printNewMessage obj.nick, obj.payload
-  positionForInput()
+  if password
+    iron.unseal str.toString(), password, iron.defaults, (err, obj) ->
+      return unless obj?
+      printNewMessage obj.nick, obj.payload
+  else
+    try
+      obj = JSON.parse(str)
+      printNewMessage obj.nick, obj.payload
+
+
