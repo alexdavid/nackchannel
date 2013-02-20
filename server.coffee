@@ -5,7 +5,11 @@ iron = require("iron")
 
 password = process.argv[2]
 
-nick = process.env.USER
+config = {}
+try
+  config = require("#{process.env.HOME}/.nackchannelrc.json")
+
+nick = config.nick || process.env.USER
 
 server = dgram.createSocket("udp4")
 client = dgram.createSocket("udp4")
