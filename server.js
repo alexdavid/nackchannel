@@ -23,9 +23,7 @@
 
   nick += "{reset}";
 
-  nick = 'foo';
-
-  colors = ["black", "blue", "cyan", "green", "magenta", "red", "white", "yellow"];
+  colors = ["blue", "cyan", "green", "magenta", "red", "white", "yellow"];
 
   randomColor = colors[Math.floor(Math.random() * colors.length)];
 
@@ -88,7 +86,11 @@
     msg = callout(obj.payload);
     charm.position(0, ++msgLine);
     charm.write('\u0007');
-    charm.write(stylize("[{" + obj.color + "}" + obj.nick + "{reset}] " + obj.payload));
+    if (obj.nick === nick) {
+      charm.write(stylize("[{" + obj.color + "}{bold}" + obj.nick + "{reset}] " + obj.payload));
+    } else {
+      charm.write(stylize("[{" + obj.color + "}" + obj.nick + "{reset}] " + obj.payload));
+    }
     charm.display('reset');
     return positionForInput();
   };
@@ -112,22 +114,26 @@
     }
     line = 0;
     for (n in present) {
-      if ((new Date() - present[n]) < 5000) {
+      if ((new Date() - present[n].when) < 5000) {
         line++;
         charm.position(size[0] - 10, line);
-        charm.write(stylize(n));
+        charm.write(stylize("{" + present[n].color + "}" + n + "{reset}"));
       }
     }
     positionForInput();
     obj = {
       nick: nick,
-      presence: true
+      presence: true,
+      color: color
     };
     return send(obj);
   };
 
   see = function(obj) {
-    return present[obj.nick] = new Date();
+    return present[obj.nick] = {
+      when: new Date(),
+      color: obj.color
+    };
   };
 
   sendRaw = function(msg) {
@@ -152,7 +158,7 @@
 
   positionForInput();
 
-  setInterval(presence, 1000);
+  setInterval(presence, 5000);
 
   stdin = process.openStdin();
 
