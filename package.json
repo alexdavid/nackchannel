@@ -1,6 +1,6 @@
 {
   "name": "nackchannel",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Quick hack I built for chatting over multicast",
   "main": "server.js",
   "dependencies": {
