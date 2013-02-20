@@ -14,7 +14,7 @@ try
 nick = config.nick || process.env.USER
 nick += "{reset}"
 
-colors = [ "black","blue","cyan","green","magenta","red","white","yellow" ]
+colors = [ "blue","cyan","green","magenta","red","white","yellow" ]
 randomColor = colors[Math.floor(Math.random()*colors.length)]
 color = randomColor
 if(typeof config.color != 'undefined')
@@ -62,16 +62,19 @@ callout = (msg) ->
   )
 
 msgLine = 0
-printNewMessage = (nick, msg) ->
+printNewMessage = (obj) ->
   if msgLine > process.stdout.getWindowSize()[1]-4
     msgLine = 0
     charm.erase 'screen'
 
-  msg = callout(msg)
+  msg = callout(obj.payload)
 
   charm.position 0, ++msgLine
   charm.write '\u0007'
-  charm.write stylize("[{#{color}}#{nick}{reset}] #{msg}")
+  if obj.nick == nick
+    charm.write stylize("[{#{obj.color}}{bold}#{obj.nick}{reset}] #{obj.payload}")
+  else
+    charm.write stylize("[{#{obj.color}}#{obj.nick}{reset}] #{obj.payload}")
   charm.display('reset')
   positionForInput()
 
@@ -95,19 +98,22 @@ presence = ->
 
   line = 0
   for n of present
-    if((new Date() - present[n]) < 5000)
+    if((new Date() - present[n].when) < 5000)
       line++
       charm.position size[0] - 10, line
-      charm.write(stylize(n))
+      charm.write(stylize("{#{present[n].color}}#{n}{reset}"))
 
   positionForInput()
   obj =
     nick: nick
     presence: true
+    color: color
   send(obj)
 
 see = (obj) ->
-  present[obj.nick] = new Date()
+  present[obj.nick] =
+    when: new Date()
+    color: obj.color
   
 
 
@@ -128,7 +134,7 @@ send = (obj) ->
 
 positionForInput()
 
-setInterval presence, 1000
+setInterval presence, 5000
 
 stdin = process.openStdin()
 stdin.on 'data', (msg) ->
@@ -140,7 +146,7 @@ stdin.on 'data', (msg) ->
 
 parseMsg = (obj) ->
   if obj.payload?
-    printNewMessage obj.nick, obj.payload
+    printNewMessage obj
   else if obj.presence?
     see(obj)
   if password

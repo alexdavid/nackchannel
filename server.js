@@ -23,6 +23,8 @@
 
   nick += "{reset}";
 
+  nick = 'foo';
+
   colors = ["black", "blue", "cyan", "green", "magenta", "red", "white", "yellow"];
 
   randomColor = colors[Math.floor(Math.random() * colors.length)];
@@ -77,15 +79,16 @@
 
   msgLine = 0;
 
-  printNewMessage = function(nick, msg) {
+  printNewMessage = function(obj) {
+    var msg;
     if (msgLine > process.stdout.getWindowSize()[1] - 4) {
       msgLine = 0;
       charm.erase('screen');
     }
-    msg = callout(msg);
+    msg = callout(obj.payload);
     charm.position(0, ++msgLine);
     charm.write('\u0007');
-    charm.write(stylize("[{" + color + "}" + nick + "{reset}] " + msg));
+    charm.write(stylize("[{" + obj.color + "}" + obj.nick + "{reset}] " + obj.payload));
     charm.display('reset');
     return positionForInput();
   };
@@ -166,7 +169,7 @@
   parseMsg = function(obj) {
     var msg;
     if (obj.payload != null) {
-      printNewMessage(obj.nick, obj.payload);
+      printNewMessage(obj);
     } else if (obj.presence != null) {
       see(obj);
     }
