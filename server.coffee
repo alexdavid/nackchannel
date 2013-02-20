@@ -19,6 +19,8 @@ charm.reset()
 
 stylize = (msg) ->
   styles = {
+    reset: 0
+
     blink: 5
     bold: 1
     underline: 4
@@ -39,21 +41,20 @@ stylize = (msg) ->
 
 callout = (msg) ->
   msg.replace(new RegExp("@#{nick}\\b", 'g'), (match) ->
-    "{magenta}#{match}{white}"
+    "{magenta}#{match}{reset}"
   )
 
 msgLine = 0
-printNewMessage = (msg) ->
+printNewMessage = (nick, msg) ->
   if msgLine > process.stdout.getWindowSize()[1]-4
     msgLine = 0
     charm.erase 'screen'
 
   msg = callout(msg)
-  msg = stylize(msg)
 
   charm.position 0, ++msgLine
   charm.write '\u0007'
-  charm.write msg
+  charm.write stylize("[{green}#{nick}{reset}] #{msg}")
   charm.display('reset')
 
 
@@ -69,12 +70,16 @@ positionForInput()
 
 stdin = process.openStdin()
 stdin.on 'data', (msg) ->
-  msg = new Buffer "{green}[#{nick}]{white} #{msg.toString()}"
+  obj =
+    payload: msg.toString()
+    nick: nick
+  msg = new Buffer JSON.stringify(obj)
   client.send msg, 0, msg.length, port, '224.0.0.0', (err, bytes) ->
     positionForInput()
     charm.erase 'end'
 
 
-server.on 'message', (msg, rinfo) ->
-  printNewMessage msg.toString()
+server.on 'message', (str, rinfo) ->
+  obj = JSON.parse(str)
+  printNewMessage obj.nick, obj.payload
   positionForInput()

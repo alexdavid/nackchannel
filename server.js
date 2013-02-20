@@ -25,6 +25,7 @@
   stylize = function(msg) {
     var matcher, styles;
     styles = {
+      reset: 0,
       blink: 5,
       bold: 1,
       underline: 4,
@@ -45,22 +46,21 @@
 
   callout = function(msg) {
     return msg.replace(new RegExp("@" + nick + "\\b", 'g'), function(match) {
-      return "{magenta}" + match + "{white}";
+      return "{magenta}" + match + "{reset}";
     });
   };
 
   msgLine = 0;
 
-  printNewMessage = function(msg) {
+  printNewMessage = function(nick, msg) {
     if (msgLine > process.stdout.getWindowSize()[1] - 4) {
       msgLine = 0;
       charm.erase('screen');
     }
     msg = callout(msg);
-    msg = stylize(msg);
     charm.position(0, ++msgLine);
     charm.write('\u0007');
-    charm.write(msg);
+    charm.write(stylize("[{green}" + nick + "{reset}] " + msg));
     return charm.display('reset');
   };
 
@@ -77,15 +77,22 @@
   stdin = process.openStdin();
 
   stdin.on('data', function(msg) {
-    msg = new Buffer("{green}[" + nick + "]{white} " + (msg.toString()));
+    var obj;
+    obj = {
+      payload: msg.toString(),
+      nick: nick
+    };
+    msg = new Buffer(JSON.stringify(obj));
     return client.send(msg, 0, msg.length, port, '224.0.0.0', function(err, bytes) {
       positionForInput();
       return charm.erase('end');
     });
   });
 
-  server.on('message', function(msg, rinfo) {
-    printNewMessage(msg.toString());
+  server.on('message', function(str, rinfo) {
+    var obj;
+    obj = JSON.parse(str);
+    printNewMessage(obj.nick, obj.payload);
     return positionForInput();
   });
 
