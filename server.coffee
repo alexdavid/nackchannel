@@ -63,6 +63,7 @@ callout = (msg) ->
 
 msgLine = 0
 printNewMessage = (obj) ->
+  charm.push()
   if msgLine > process.stdout.getWindowSize()[1]-4
     msgLine = 0
     charm.erase 'screen'
@@ -76,7 +77,7 @@ printNewMessage = (obj) ->
   else
     charm.write stylize("[{#{obj.color}}#{obj.nick}{reset}] #{obj.payload}")
   charm.display('reset')
-  positionForInput()
+  charm.pop()
 
 
 positionForInput = ->
@@ -87,6 +88,7 @@ positionForInput = ->
   charm.background 'black'
 
 presence = ->
+  charm.push()
   line = 0
   size = process.stdout.getWindowSize()
 
@@ -102,8 +104,9 @@ presence = ->
       line++
       charm.position size[0] - 10, line
       charm.write(stylize("{#{present[n].color}}#{n}{reset}"))
+  charm.pop()
 
-  positionForInput()
+
   obj =
     nick: nick
     presence: true
@@ -120,7 +123,6 @@ see = (obj) ->
 sendRaw = (msg) ->
   msg = new Buffer msg
   client.send msg, 0, msg.length, port, '224.0.0.0', (err, bytes) ->
-    positionForInput()
     charm.erase 'end'
 
 send = (obj) ->
@@ -130,6 +132,8 @@ send = (obj) ->
   else
     msg = JSON.stringify(obj)
     sendRaw(msg)
+  if obj.payload?
+    positionForInput()
 
 
 positionForInput()

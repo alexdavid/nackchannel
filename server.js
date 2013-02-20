@@ -78,6 +78,7 @@
   msgLine = 0;
 
   printNewMessage = function(obj) {
+    charm.push();
     if (msgLine > process.stdout.getWindowSize()[1] - 4) {
       msgLine = 0;
       charm.erase('screen');
@@ -91,7 +92,7 @@
       charm.write(stylize("[{" + obj.color + "}" + obj.nick + "{reset}] " + obj.payload));
     }
     charm.display('reset');
-    return positionForInput();
+    return charm.pop();
   };
 
   positionForInput = function() {
@@ -104,6 +105,7 @@
 
   presence = function() {
     var i, line, n, obj, size, _i;
+    charm.push();
     line = 0;
     size = process.stdout.getWindowSize();
     for (i = _i = 0; _i <= 10; i = ++_i) {
@@ -119,7 +121,7 @@
         charm.write(stylize("{" + present[n].color + "}" + n + "{reset}"));
       }
     }
-    positionForInput();
+    charm.pop();
     obj = {
       nick: nick,
       presence: true,
@@ -138,7 +140,6 @@
   sendRaw = function(msg) {
     msg = new Buffer(msg);
     return client.send(msg, 0, msg.length, port, '224.0.0.0', function(err, bytes) {
-      positionForInput();
       return charm.erase('end');
     });
   };
@@ -146,12 +147,15 @@
   send = function(obj) {
     var msg;
     if (password) {
-      return iron.seal(obj, password, iron.defaults, function(err, sealed) {
+      iron.seal(obj, password, iron.defaults, function(err, sealed) {
         return sendRaw(sealed);
       });
     } else {
       msg = JSON.stringify(obj);
-      return sendRaw(msg);
+      sendRaw(msg);
+    }
+    if (obj.payload != null) {
+      return positionForInput();
     }
   };
 
