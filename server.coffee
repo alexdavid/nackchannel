@@ -5,6 +5,8 @@ iron = require("iron")
 
 password = process.argv[2]
 
+present = {}
+
 config = {}
 try
   config = require("#{process.env.HOME}/.nackchannelrc.json")
@@ -74,36 +76,75 @@ positionForInput = ->
   charm.position 0, process.stdout.getWindowSize()[1]-1
   charm.background 'black'
 
+presence = ->
+  line = 0
+  size = process.stdout.getWindowSize()
 
-send = (msg) ->
+  for i in [0..10]
+    charm.position size[0] - 10, line
+    charm.write("         ")
+    line++
+    
+
+  line = 0
+  for n of present
+    if((new Date() - present[n]) < 5000)
+      line++
+      charm.position size[0] - 10, line
+      charm.write(stylize(n))
+
+  positionForInput()
+  obj =
+    nick: nick
+    presence: true
+  send(obj)
+
+see = (obj) ->
+  present[obj.nick] = new Date()
+  
+
+
+sendRaw = (msg) ->
   msg = new Buffer msg
   client.send msg, 0, msg.length, port, '224.0.0.0', (err, bytes) ->
     positionForInput()
     charm.erase 'end'
 
+send = (obj) ->
+  if password
+    iron.seal obj, password, iron.defaults, (err, sealed) ->
+      sendRaw(sealed)
+  else
+    msg = JSON.stringify(obj)
+    sendRaw(msg)
+
 
 positionForInput()
+
+setInterval presence, 1000
 
 stdin = process.openStdin()
 stdin.on 'data', (msg) ->
   obj =
     payload: msg.toString()
     nick: nick
-  if password
-    iron.seal obj, password, iron.defaults, (err, sealed) ->
-      send(sealed)
-  else
-    msg = JSON.stringify(obj)
-    send(msg)
+  send(obj)
+
+parseMsg = (obj) ->
+  if obj.payload?
+    printNewMessage obj.nick, obj.payload
+  else if obj.presence?
+    see(obj)
+  
 
 server.on 'message', (str, rinfo) ->
   if password
     iron.unseal str.toString(), password, iron.defaults, (err, obj) ->
       return unless obj?
-      printNewMessage obj.nick, obj.payload
+      parseMsg(obj)
   else
     try
       obj = JSON.parse(str)
-      printNewMessage obj.nick, obj.payload
+      parseMsg(obj)
 
 
