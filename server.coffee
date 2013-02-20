@@ -1,6 +1,8 @@
 dgram = require("dgram")
 charm = require('charm')()
 
+nick = process.env.USER
+
 server = dgram.createSocket("udp4")
 client = dgram.createSocket("udp4")
 
@@ -32,12 +34,12 @@ stylize = (msg) ->
   }
   matcher = /{([a-z]+)}/gi
   msg.replace(matcher, (match, idx) ->
-    '['+styles[idx]+'m'
+    "[#{styles[idx]}m"
   )
 
 callout = (msg) ->
-  msg.replace(new RegExp('@'+process.argv[2]+'\\b', 'g'), (match) ->
-    '{magenta}'+match+'{white}'
+  msg.replace(new RegExp("@#{nick}\\b", 'g'), (match) ->
+    "{magenta}#{match}{white}"
   )
 
 msgLine = 0
@@ -67,7 +69,7 @@ positionForInput()
 
 stdin = process.openStdin()
 stdin.on 'data', (msg) ->
-  msg = new Buffer "{green}[#{process.argv[2]}]{white} #{msg.toString()}"
+  msg = new Buffer "{green}[#{nick}]{white} #{msg.toString()}"
   client.send msg, 0, msg.length, port, '224.0.0.0', (err, bytes) ->
     positionForInput()
     charm.erase 'end'
