@@ -67,7 +67,7 @@ printNewMessage = (obj) ->
     msgLine = 0
     charm.erase 'screen'
 
-  msg = callout(obj.payload)
+  obj.payload = callout(obj.payload)
 
   charm.position 0, ++msgLine
   charm.write '\u0007'

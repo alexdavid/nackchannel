@@ -78,12 +78,11 @@
   msgLine = 0;
 
   printNewMessage = function(obj) {
-    var msg;
     if (msgLine > process.stdout.getWindowSize()[1] - 4) {
       msgLine = 0;
       charm.erase('screen');
     }
-    msg = callout(obj.payload);
+    obj.payload = callout(obj.payload);
     charm.position(0, ++msgLine);
     charm.write('\u0007');
     if (obj.nick === nick) {
