@@ -12,6 +12,13 @@ try
   config = require("#{process.env.HOME}/.nackchannelrc.json")
 
 nick = config.nick || process.env.USER
+nick += "{reset}"
+
+colors = [ "black","blue","cyan","green","magenta","red","white","yellow" ]
+randomColor = colors[Math.floor(Math.random()*colors.length)]
+color = randomColor
+if(typeof config.color != 'undefined')
+  color = config.color
 
 server = dgram.createSocket("udp4")
 client = dgram.createSocket("udp4")
@@ -64,7 +71,7 @@ printNewMessage = (nick, msg) ->
 
   charm.position 0, ++msgLine
   charm.write '\u0007'
-  charm.write stylize("[{green}#{nick}{reset}] #{msg}")
+  charm.write stylize("[{#{color}}#{nick}{reset}] #{msg}")
   charm.display('reset')
   positionForInput()
 
@@ -128,6 +135,7 @@ stdin.on 'data', (msg) ->
   obj =
     payload: msg.toString()
     nick: nick
+    color: color
   send(obj)
 
 parseMsg = (obj) ->
@@ -135,7 +143,12 @@ parseMsg = (obj) ->
     printNewMessage obj.nick, obj.payload
   else if obj.presence?
     see(obj)
-  
+  if password
+    iron.seal obj, password, iron.defaults, (err, sealed) ->
+      send(sealed)
+  else
+    msg = JSON.stringify(obj)
+    send(msg)
 
 server.on 'message', (str, rinfo) ->
   if password
