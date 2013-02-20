@@ -54,18 +54,26 @@ callout = (msg) ->
 
 msgLine = 0
 printNewMessage = (nick, msg) ->
-  if msgLine > process.stdout.getWindowSize()[1]-4
-    msgLine = 0
-    charm.erase 'screen'
 
   msg = callout(msg)
 
-  charm.position 0, ++msgLine
-  charm.write '\u0007'
-  charm.write stylize("[{green}#{nick}{reset}] #{msg}")
-  charm.display('reset')
-  positionForInput()
+  updateMessageList(msg)
 
+  displayMessageList
+
+  # charm.position 0, ++msgLine
+  # charm.write '\u0007'
+  # charm.write stylize("[{green}#{nick}{reset}] #{msg}")
+  # charm.display('reset')
+  # positionForInput()
+
+displayMessageList = ->
+  for message in messageList
+    charm.position 0, ++msgLine
+    charm.write '\u0007'
+    charm.write stylize("[{green}#{nick}{reset}] #{msg}")
+    charm.display('reset')
+  positionForInput()
 
 positionForInput = ->
   charm.position 0, process.stdout.getWindowSize()[1]-2
@@ -83,6 +91,12 @@ send = (msg) ->
 
 
 positionForInput()
+
+messageList = []
+updateMessageList = (msg) ->
+  messageList.push(msg)
+  if messageList.length > process.stdout.getWindowSize()[1]-4
+    messageList.shift()
 
 stdin = process.openStdin()
 stdin.on 'data', (msg) ->
