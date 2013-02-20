@@ -98,7 +98,7 @@ presence = ->
 
   line = 0
   for n of present
-    if((new Date() - present[n].when) < 5000)
+    if((new Date() - present[n].when) < 15000)
       line++
       charm.position size[0] - 10, line
       charm.write(stylize("{#{present[n].color}}#{n}{reset}"))
