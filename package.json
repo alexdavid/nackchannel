@@ -1,10 +1,11 @@
 {
   "name": "nackchannel",
-  "version": "0.0.4",
+  "version": "0.0.6",
   "description": "Quick hack I built for chatting over multicast",
   "main": "server.js",
   "dependencies": {
-    "charm": "~0.1.1"
+    "charm": "~0.1.1",
+    "iron": "latest"
   },
   "devDependencies": {},
   "scripts": {
