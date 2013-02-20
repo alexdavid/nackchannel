@@ -14,9 +14,7 @@ nick += "{reset}"
 
 colors = [ "black","blue","cyan","green","magenta","red","white","yellow" ]
 randomColor = colors[Math.floor(Math.random()*colors.length)]
-
 color = randomColor
-console.log(randomColor)
 if(typeof config.color != 'undefined')
   color = config.color
 
