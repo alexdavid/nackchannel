@@ -73,7 +73,7 @@ printNewMessage = (obj) ->
 
     charm.erase 'screen'
     msgLine = 0
-    for obj in messageList 
+    for obj in messageList
       charm.position 0, ++msgLine
       if obj.nick == nick
         charm.write stylize("[{#{obj.color}}{bold}#{obj.nick}{reset}] #{obj.payload}")
@@ -100,7 +100,8 @@ positionForInput = ->
   charm.background 'blue'
   charm.erase 'end'
   charm.position 0, process.stdout.getWindowSize()[1]-1
-  charm.background 'black'
+  charm.background('black')
+  charm.erase 'end'
 
 drawPresence = ->
   charm.push()
@@ -139,8 +140,7 @@ see = (obj) ->
 
 sendRaw = (msg) ->
   msg = new Buffer msg
-  client.send msg, 0, msg.length, port, '224.0.0.0', (err, bytes) ->
-    charm.erase 'end'
+  client.send msg, 0, msg.length, port, '224.0.0.0'
 
 send = (obj) ->
   if password
@@ -161,8 +161,8 @@ stdin = process.openStdin()
 stdin.on 'data', (msg) ->
   obj =
     payload: msg.toString()
-    nick: nick
-    color: color
+    nick: nick.toString()
+    color: color.toString()
   send(obj)
 
 parseMsg = (obj) ->
