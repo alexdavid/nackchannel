@@ -82,6 +82,7 @@ printNewMessage = (obj) ->
     charm.write '\u0007'
     charm.display('reset')
 
+    drawPresence()
   else
     charm.position 0, ++msgLine
     charm.write '\u0007'
@@ -101,7 +102,7 @@ positionForInput = ->
   charm.position 0, process.stdout.getWindowSize()[1]-1
   charm.background 'black'
 
-presence = ->
+drawPresence = ->
   charm.push()
   line = 0
   size = process.stdout.getWindowSize()
@@ -120,6 +121,8 @@ presence = ->
       charm.write(stylize("{#{present[n].color}}#{n}{reset}"))
   charm.pop()
 
+presence = ->
+  drawPresence()
 
   obj =
     nick: nick
