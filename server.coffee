@@ -61,24 +61,38 @@ callout = (msg) ->
     "{magenta}#{match}{reset}"
   )
 
+messageList = []
 msgLine = 0
 printNewMessage = (obj) ->
+  obj.payload = callout(obj.payload)
+  messageList.push(obj)
+
   charm.push()
   if msgLine > process.stdout.getWindowSize()[1]-4
-    msgLine = 0
+    messageList.shift()
+
     charm.erase 'screen'
+    msgLine = 0
+    for obj in messageList 
+      charm.position 0, ++msgLine
+      if obj.nick == nick
+        charm.write stylize("[{#{obj.color}}{bold}#{obj.nick}{reset}] #{obj.payload}")
+      else
+        charm.write stylize("[{#{obj.color}}#{obj.nick}{reset}] #{obj.payload}")
+    charm.write '\u0007'
+    charm.display('reset')
 
-  obj.payload = callout(obj.payload)
-
-  charm.position 0, ++msgLine
-  charm.write '\u0007'
-  if obj.nick == nick
-    charm.write stylize("[{#{obj.color}}{bold}#{obj.nick}{reset}] #{obj.payload}")
   else
-    charm.write stylize("[{#{obj.color}}#{obj.nick}{reset}] #{obj.payload}")
-  charm.display('reset')
+    charm.position 0, ++msgLine
+    charm.write '\u0007'
+    if obj.nick == nick
+      charm.write stylize("[{#{obj.color}}{bold}#{obj.nick}{reset}] #{obj.payload}")
+    else
+      charm.write stylize("[{#{obj.color}}#{obj.nick}{reset}] #{obj.payload}")
+    charm.display('reset')
   charm.pop()
 
+  positionForInput()
 
 positionForInput = ->
   charm.position 0, process.stdout.getWindowSize()[1]-2
