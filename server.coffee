@@ -170,12 +170,6 @@ parseMsg = (obj) ->
     printNewMessage obj
   else if obj.presence?
     see(obj)
-  if password
-    iron.seal obj, password, iron.defaults, (err, sealed) ->
-      send(sealed)
-  else
-    msg = JSON.stringify(obj)
-    send(msg)
 
 server.on 'message', (str, rinfo) ->
   if password

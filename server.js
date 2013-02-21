@@ -119,7 +119,8 @@
     charm.background('blue');
     charm.erase('end');
     charm.position(0, process.stdout.getWindowSize()[1] - 1);
-    return charm.background('black');
+    charm.background('black');
+    return charm.erase('end');
   };
 
   drawPresence = function() {
@@ -163,9 +164,7 @@
 
   sendRaw = function(msg) {
     msg = new Buffer(msg);
-    return client.send(msg, 0, msg.length, port, '224.0.0.0', function(err, bytes) {
-      return charm.erase('end');
-    });
+    return client.send(msg, 0, msg.length, port, '224.0.0.0');
   };
 
   send = function(obj) {
@@ -193,26 +192,17 @@
     var obj;
     obj = {
       payload: msg.toString(),
-      nick: nick,
-      color: color
+      nick: nick.toString(),
+      color: color.toString()
     };
     return send(obj);
   });
 
   parseMsg = function(obj) {
-    var msg;
     if (obj.payload != null) {
-      printNewMessage(obj);
+      return printNewMessage(obj);
     } else if (obj.presence != null) {
-      see(obj);
-    }
-    if (password) {
-      return iron.seal(obj, password, iron.defaults, function(err, sealed) {
-        return send(sealed);
-      });
-    } else {
-      msg = JSON.stringify(obj);
-      return send(msg);
+      return see(obj);
     }
   };
 
