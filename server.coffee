@@ -1,3 +1,5 @@
+os = require('os')
+net = require("net")
 charm = require('charm')()
 dgram = require("dgram")
 iron = require("iron")
@@ -24,6 +26,47 @@ server = dgram.createSocket("udp4")
 client = dgram.createSocket("udp4")
 
 port = 41234
+
+
+class TcpConnection
+  constructor: ->
+    @connections = {}
+    @server = net.createServer()
+    @getMyIP()
+    @server.listen 0, =>
+      @port = @server.address().port
+      setInterval(@broadcast, 3e3)
+    @server.on("data", @receive)
+
+  connectTo: (obj) ->
+    @connections[obj.address] ||= {}
+    return if @connections[obj.address][obj.port]
+    @connections[obj.address][obj.port] = {}
+    socket = new net.Socket
+    socket.connect(obj.address, obj.port)
+    socket.on("data", @receive)
+    @connections[obj.address][obj.port].socket = socket
+
+  receive: =>
+
+  send: (data) =>
+    for address of @connections
+      for port of @connectsions[address]
+        @connections[address][port].write(data)
+
+
+  getMyIP: =>
+    interfaces = os.networkInterfaces()
+    for k of interfaces
+      for address in interfaces[k]
+        if address.internal == false && address.family == "IPv4"
+          @address = address.address
+
+  broadcast: =>
+    send
+      port: @port
+      address: @address
+
 
 
 server.bind(port)
@@ -182,3 +225,5 @@ server.on 'message', (str, rinfo) ->
       parseMsg(obj)
 
 
+
+tcpconnection = new TcpConnection
