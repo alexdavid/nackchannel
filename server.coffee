@@ -39,9 +39,12 @@ class TcpConnection
     @server.on("data", @receive)
 
   connectTo: (obj) ->
+    console.log(obj)
     @connections[obj.address] ||= {}
     return if @connections[obj.address][obj.port]
-    @connections[obj.address][obj.port] = {}
+    @connections[obj.address][obj.port] =
+      nick: obj.nick
+      color: color
     socket = new net.Socket
     socket.connect(obj.address, obj.port)
     socket.on("data", @receive)
@@ -49,10 +52,21 @@ class TcpConnection
 
   receive: =>
 
-  send: (data) =>
+  send: (obj) =>
     for address of @connections
-      for port of @connectsions[address]
-        @connections[address][port].write(data)
+      for port of @connections[address]
+        if password
+          iron.seal obj, password, iron.defaults, (err, sealed) ->
+            @sendRaw(sealed)
+        else
+          msg = JSON.stringify(obj)
+          @sendRaw(msg)
+        if obj.payload?
+          positionForInput()
+
+  sendRaw: (msg) =>
+    msg = new Buffer msg
+    socket.write msg
 
 
   getMyIP: =>
@@ -66,6 +80,8 @@ class TcpConnection
     send
       port: @port
       address: @address
+      nick: nick
+      color: color
 
 
 
@@ -165,15 +181,6 @@ drawPresence = ->
       charm.write(stylize("{#{present[n].color}}#{n}{reset}"))
   charm.pop()
 
-presence = ->
-  drawPresence()
-
-  obj =
-    nick: nick
-    presence: true
-    color: color
-  send(obj)
-
 see = (obj) ->
   present[obj.nick] =
     when: new Date()
@@ -198,7 +205,7 @@ send = (obj) ->
 
 positionForInput()
 
-setInterval presence, 5000
+setInterval drawPresence, 5000
 
 stdin = process.openStdin()
 stdin.on 'data', (msg) ->
@@ -209,10 +216,8 @@ stdin.on 'data', (msg) ->
   send(obj)
 
 parseMsg = (obj) ->
-  if obj.payload?
-    printNewMessage obj
-  else if obj.presence?
-    see(obj)
+  if obj.address?
+    tcpconnection.connect(obj)
 
 server.on 'message', (str, rinfo) ->
   if password
