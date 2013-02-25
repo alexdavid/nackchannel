@@ -31,42 +31,51 @@ port = 41234
 class TcpConnection
   constructor: ->
     @connections = {}
-    @server = net.createServer()
     @getMyIP()
-    @server.listen 0, =>
-      @port = @server.address().port
-      setInterval(@broadcast, 3e3)
-    @server.on("data", @receive)
+    conn = this
+    server = net.createServer((s) =>
+      s.on("data", @receive)
+      s.on("error", @err)
+    ).listen 0
+    @port = server.address().port
+    @broadcast()
+    setInterval(@broadcast, 10e3)
 
-  connectTo: (obj) ->
-    console.log(obj)
+  err: (e) ->
+    console.log(e)
+
+  connectTo: (obj) =>
+    return unless obj.port?
     @connections[obj.address] ||= {}
-    return if @connections[obj.address][obj.port]
+    return if @connections[obj.address][obj.port]?
+    socket = net.connect
+      port: obj.port
+      address: obj.address
+    socket.on("error", @err)
     @connections[obj.address][obj.port] =
       nick: obj.nick
       color: color
-    socket = new net.Socket
-    socket.connect(obj.address, obj.port)
-    socket.on("data", @receive)
-    @connections[obj.address][obj.port].socket = socket
+      socket: socket
 
-  receive: =>
+  receive: (data) =>
+    parseRawMsg(data.toString())
 
   send: (obj) =>
-    for address of @connections
-      for port of @connections[address]
-        if password
-          iron.seal obj, password, iron.defaults, (err, sealed) ->
-            @sendRaw(sealed)
-        else
-          msg = JSON.stringify(obj)
-          @sendRaw(msg)
-        if obj.payload?
-          positionForInput()
+    if password
+      iron.seal obj, password, iron.defaults, (err, sealed) =>
+        @sendRaw(sealed)
+    else
+      msg = JSON.stringify(obj)
+      @sendRaw(msg)
+    if obj.payload?
+      positionForInput()
 
   sendRaw: (msg) =>
     msg = new Buffer msg
-    socket.write msg
+    for address of @connections
+      for port of @connections[address]
+        socket = @connections[address][port].socket
+        socket.write msg
 
 
   getMyIP: =>
@@ -213,13 +222,15 @@ stdin.on 'data', (msg) ->
     payload: msg.toString()
     nick: nick.toString()
     color: color.toString()
-  send(obj)
+  tcpconnection.send(obj)
 
 parseMsg = (obj) ->
-  if obj.address?
-    tcpconnection.connect(obj)
+  if obj.payload?
+    printNewMessage obj
+  else if obj.address?
+    tcpconnection.connectTo(obj)
 
-server.on 'message', (str, rinfo) ->
+parseRawMsg = (str) ->
   if password
     iron.unseal str.toString(), password, iron.defaults, (err, obj) ->
       return unless obj?
@@ -228,6 +239,9 @@ server.on 'message', (str, rinfo) ->
     try
       obj = JSON.parse(str)
       parseMsg(obj)
+
+server.on 'message', (str, rinfo) ->
+  parseRawMsg(str)
 
 
 
