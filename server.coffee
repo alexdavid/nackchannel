@@ -52,10 +52,16 @@ class TcpConnection
       port: obj.port
       address: obj.address
     socket.on("error", @err)
+    socket.on("close", @close(obj.address, obj.port))
     @connections[obj.address][obj.port] =
       nick: obj.nick
       color: color
       socket: socket
+
+  close: (address, port) =>
+    =>
+      delete @connections[address][port]
+      drawPresence()
 
   receive: (data) =>
     parseRawMsg(data.toString())
@@ -183,11 +189,12 @@ drawPresence = ->
     
 
   line = 0
-  for n of present
-    if((new Date() - present[n].when) < 15000)
+  for address of tcpconnection.connections
+    for port of tcpconnection.connections[address]
+      obj = tcpconnection.connections[address][port]
       line++
       charm.position size[0] - 10, line
-      charm.write(stylize("{#{present[n].color}}#{n}{reset}"))
+      charm.write(stylize("{#{obj.color}}#{obj.nick}{reset}"))
   charm.pop()
 
 see = (obj) ->
