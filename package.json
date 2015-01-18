@@ -1,6 +1,6 @@
 {
   "name": "nackchannel",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Encrypted UDP multicast chat client",
   "dependencies": {
     "charm": "^1.0.0",
