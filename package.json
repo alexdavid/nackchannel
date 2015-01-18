@@ -1,6 +1,6 @@
 {
   "name": "nackchannel",
-  "version": "0.1.3",
+  "version": "1.0.0",
   "description": "Quick hack I built for chatting over multicast",
   "dependencies": {
     "charm": "^1.0.0",
