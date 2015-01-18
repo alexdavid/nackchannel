@@ -1,7 +1,7 @@
 {
   "name": "nackchannel",
   "version": "1.0.0",
-  "description": "Quick hack I built for chatting over multicast",
+  "description": "Encrypted UDP multicast chat client",
   "dependencies": {
     "charm": "^1.0.0",
     "coffee-script": "^1.8.0",
